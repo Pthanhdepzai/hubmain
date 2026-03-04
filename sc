@@ -3744,7 +3744,7 @@ local v466 = vu32:MakeWindow({
 })
 
 v466:AddMinimizeButton({
-    Button = { Image = "rbxassetid://119858865814235", BackgroundTransparency = 0 },
+    Button = { Image = "rbxassetid://102350410611012", BackgroundTransparency = 0 },
     Size = UDim2.new(0, 35, 0, 35),
     Corner = { CornerRadius = UDim.new(0.25, 0) },
 })
@@ -3764,7 +3764,7 @@ local v496 = v466:MakeTab({"Misc", "settings"})
 v484:AddDiscordInvite({
     Name = "SilkronX Hub | Community",
     Description = "Welcome to the SilkronX Hub",
-    Logo = "rbxassetid://131723242350068",
+    Logo = "rbxassetid://102350410611012",
     Invite = "https://discord.gg/ZJVbPP2q"
 })
 _G.SelectWeapon = "Melee"
@@ -10875,4 +10875,4 @@ v496:AddToggle({
     end
 })
 
-return hub.lua
+return redzlib.lua
