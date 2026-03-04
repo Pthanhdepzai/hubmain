@@ -3736,7 +3736,7 @@ function CheckItemBPCRBPCR(v463)
         end
     end
 end
-local vu32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/SilkronX%20Hub.lua"))()
+local vu32 = loadstring(game:HttpGet("https://raw.githubusercontent.com/PlockScripts/Library-ui/refs/heads/main/redz-V5-remake/main.luau"))()
 local v466 = vu32:MakeWindow({
     Title = "SilkronX Hub [ BETA ACCESS ] : Blox Fruits",
     SubTitle = "SilkronX Hub",
