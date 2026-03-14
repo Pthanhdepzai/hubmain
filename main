@@ -1,4 +1,3 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/d"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/ds"))()
 
 -- ==========================================
