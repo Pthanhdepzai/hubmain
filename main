@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/ds"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/SKIBIDI"))()
 
 -- ==========================================
 -- SERVICES
@@ -40,9 +40,9 @@ local Root = HumanoidRootPart
 Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/s"))()
 
 Window = Library:CreateWindow({
-    Title = "SilkronX Hub",
+    Title = "BN Hub",
     Desc = "- Blox Fruit",
-    Image = "rbxassetid://130480113256357"
+    Image = "rbxassetid://121179149636311"
 })
 
 -- ==========================================
@@ -12029,4 +12029,4 @@ Tabs.Misc:AddButton({
 })
 
 -- ===============================================================
-print('✅ SilkronX Hub - All features loaded!')
+print('✅ BN Hub - All features loaded!')
