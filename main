@@ -3313,7 +3313,7 @@ end)
 _G.NearestFarmRadius = 150
 
 Tabs.Main:AddSlider("SliderNearestRadius", {
-    ["Title"] = "Bán Kính Farm Nearest (studs)",
+    ["Title"] = "Farm Nearest Radius",
     ["Default"] = 150,
     ["Min"] = 50,
     ["Max"] = 500,
