@@ -3309,52 +3309,84 @@ spawn(function()
         end
     end
 end)
+-- ===== FARM NEAREST (Sửa lại) =====
+_G.NearestFarmRadius = 150
+
+Tabs.Main:AddSlider("SliderNearestRadius", {
+    ["Title"] = "Bán Kính Farm Nearest (studs)",
+    ["Default"] = 150,
+    ["Min"] = 50,
+    ["Max"] = 500,
+    ["Rounding"] = 1,
+    ["Callback"] = function(v)
+        _G.NearestFarmRadius = v
+    end
+})
+
 Tabs.Main:AddToggle("ToggleMobAura", {
-    ["Title"] = "Đánh Quái Gần",
+    ["Title"] = "Farm Nearest",
     ["Default"] = false
-}):OnChanged(function(p276)
-    _G.AutoNear = p276
-    if p276 == false then
-        wait()
-        Tween(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame)
-        wait()
+}):OnChanged(function(v)
+    _G.AutoNear = v
+    if not v then
+        bringmob = false
+        Tween(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame)
     end
 end)
--- [SetValue skipped - Library không cần]
-spawn(function()
-    while wait() do
-        if _G.AutoNear then
-            pcall(function()
-                local v277, v278, v279 = pairs(game.Workspace.Enemies:GetChildren())
-                while true do
-                    local v280
-                    v279, v280 = v277(v278, v279)
-                    if v279 == nil then
-                        break
-                    end
-                    if v280:FindFirstChild("Humanoid") and (v280:FindFirstChild("HumanoidRootPart") and (v280.Humanoid.Health > 0 and (v280.Name and (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v280:FindFirstChild("HumanoidRootPart").Position).Magnitude <= 5000))) then
-                        repeat
-                            wait(_G.Fast_Delay)
-                            v280.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-                            v280.HumanoidRootPart.Transparency = 1
-                            v280.Humanoid.JumpPower = 0
-                            v280.Humanoid.WalkSpeed = 0
-                            v280.HumanoidRootPart.CanCollide = false
-                            local mobCF7 = v280.HumanoidRootPart.CFrame * Pos
-                            local dist7 = (mobCF7.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                            if dist7 > 5 then BKP(mobCF7) end
-                            bringmob = true
-                            AutoHaki()
-                            EquipTool(SelectWeapon)
-                            AttackNoCoolDown()
-                            FarmPos = v280.HumanoidRootPart.CFrame
-                            MonFarm = v280.Name
-                        until not _G.AutoNear or (not v280.Parent or v280.Humanoid.Health <= 0) or not game.Workspace.Enemies:FindFirstChild(v280.Name)
-                        bringmob = false
+
+task.spawn(function()
+    while task.wait(0.2) do
+        if not _G.AutoNear then continue end
+        pcall(function()
+            local plr = game.Players.LocalPlayer
+            local char = plr.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            local radius = _G.NearestFarmRadius or 150
+            local closest, closestDist = nil, radius
+
+            -- Tìm NPC gần nhất trong bán kính
+            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                if v:IsA("Model")
+                    and v:FindFirstChild("HumanoidRootPart")
+                    and v:FindFirstChild("Humanoid")
+                    and v.Humanoid.Health > 0 then
+                    local d = (v.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    if d < closestDist then
+                        closestDist = d
+                        closest = v
                     end
                 end
+            end
+
+            if not closest then return end
+
+            -- Khoá mob tại chỗ
+            pcall(function()
+                closest.HumanoidRootPart.CanCollide = false
+                closest.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                closest.HumanoidRootPart.Transparency = 1
+                closest.Humanoid.JumpPower = 0
+                closest.Humanoid.WalkSpeed = 0
+                pcall(function() closest.Head.CanCollide = false end)
             end)
-        end
+
+            -- Bay đến mob
+            local targetCF = closest.HumanoidRootPart.CFrame * Pos
+            if (targetCF.Position - hrp.Position).Magnitude > 5 then
+                BKP(targetCF)
+            end
+
+            bringmob = true
+            AutoHaki()
+            EquipTool(SelectWeapon)
+            AttackNoCoolDown()
+
+            FarmPos = closest.HumanoidRootPart.CFrame
+            MonFarm = closest.Name
+        end)
     end
 end)
 Tabs.Main:AddToggle("ToggleCastleRaid", {
