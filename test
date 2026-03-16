@@ -3736,9 +3736,7 @@ function CheckItemBPCRBPCR(v463)
         end
     end
 end
-local Fluent = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"
-))()
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/jacklebeignet/Fluent-Reborn/refs/heads/main/src/ui.lua"))()
 
 local Window = Fluent:CreateWindow({
     Title = "redz hub [ BETA ACCESS ] : Blox Fruits",
@@ -10765,4 +10763,5 @@ v496:AddToggle("Anti_reset", {
     end
 })
 
-return redzlib
+Window:SelectTab(1)
+Fluent:Notify({Title = "redz hub", Content = "Script Loaded!", Duration = 3})
