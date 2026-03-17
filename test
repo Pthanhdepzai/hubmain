@@ -38,7 +38,37 @@ local Root = HumanoidRootPart
 -- ==========================================
 -- cccc1312312312
 -- ==========================================
-Library = pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/Pthanhdepzai/hubmain/refs/heads/main/SEX"))() end)
+-- Load Linoria UI Library (tuong thich Potassium)
+local _libUrls = {
+    "https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua",
+    "https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/Linoria/Library.lua",
+}
+for _, url in ipairs(_libUrls) do
+    local ok, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if ok and result then
+        Library = result
+        break
+    end
+end
+if not Library then
+    -- Fallback: tao Library gia de script khong crash
+    Library = {
+        CreateWindow = function(_, cfg)
+            local w = {_tabs = {}}
+            function w:AddTab(name)
+                local t = {_name = name, _sections = {}}
+                function t:AddLeftGroupbox(n) return {AddToggle=function()return{}end,AddSlider=function()return{}end,AddDropdown=function()return{}end,AddButton=function()return{}end,AddLabel=function()return{}end,AddInput=function()return{}end} end
+                t.AddRightGroupbox = t.AddLeftGroupbox
+                return t
+            end
+            return w
+        end,
+        Notify = function() end,
+    }
+    warn("BN Hub: Khong load duoc UI Library!")
+end
 
 Window = Library:CreateWindow({
     Title = "BN Hub",
