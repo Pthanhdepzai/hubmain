@@ -2517,105 +2517,184 @@ function UpdateGeaESP()
         end)
     end
 end
-function Tween2(p170)
-    local v171 = (p170.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-    local v172 = 350
-    local v173 = TweenInfo.new(v171 / v172, Enum.EasingStyle.Linear)
-    local v174 = game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, v173, {
-        ["CFrame"] = p170
-    })
-    v174:Play()
-    if _G.StopTween2 then
-        v174:Cancel()
-    end
-    _G.Clip2 = true
-    wait(v171 / v172)
-    _G.Clip2 = false
-end
-function BKP(p175)
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = p175
-    task.wait()
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = p175
-end
-TweenSpeed = 600
--- Max speed server accepts (studs/sec)
--- Exceeding causes server to snap player back
-local SERVER_MAX_SPEED = 120  -- studs/sec, safe for server
-local STEP_SIZE = 60          -- studs per step
-local STEP_WAIT = 0.5         -- wait seconds between steps
+-- =============================================
+-- TELEPORT ENGINE - KHONG DUNG TWEENSERVICE
+-- Set CFrame truc tiep tung buoc nho
+-- Server khong the snap vi khong co velocity bat thuong
+-- =============================================
 
--- SafeMove: move in small steps so server does not reject
--- Each step ~60 studs, wait 0.5s for server sync
-local function SafeMove(targetCF, checkStop)
-    local player = game.Players.LocalPlayer
-    if not player.Character then return end
-    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+local _lp = game:GetService("Players").LocalPlayer
+
+local function _hrp()
+    return _lp.Character and _lp.Character:FindFirstChild("HumanoidRootPart")
+end
+
+-- Set CFrame 2 lan de dam bao server accept
+local function _setCF(hrp, cf)
+    hrp.CFrame = cf
+    task.wait(0.05)
+    if hrp and hrp.Parent then
+        hrp.CFrame = cf
+    end
+end
+
+-- Di chuyen tung buoc, moi buoc 200 studs
+-- Truoc khi di kiem tra co nen requestEntrance khong
+local _STEP = 200
+local _tpThread = nil
+
+local function _cancelTP()
+    if _tpThread then
+        pcall(task.cancel, _tpThread)
+        _tpThread = nil
+    end
+end
+
+-- Check and use requestEntrance if needed (islands far away)
+local function _checkEntrance(dest)
+    local hrp = _hrp()
     if not hrp then return end
+    local dist = (dest - hrp.Position).Magnitude
+    if dist < 3000 then return end
 
-    local targetPos = targetCF.Position
-    while true do
-        if checkStop and checkStop() then break end
-        local curPos = hrp.Position
-        local remaining = (targetPos - curPos).Magnitude
-        if remaining < 8 then break end
+    local placeId = game.PlaceId
+    local gates = {}
+    if placeId == 2753915549 or placeId == 85211729168715 then
+        gates = {
+            {pos = Vector3.new(-7894, 5547, -380),  entrance = Vector3.new(-7894.6176757813, 5547.1416015625, -380.29119873047)},
+            {pos = Vector3.new(-4607, 874, -1667),   entrance = Vector3.new(-4607.82275, 872.54248, -1667.55688)},
+            {pos = Vector3.new(61163, 11, 1819),     entrance = Vector3.new(61163.8515625, 11.6796875, 1819.7841796875)},
+        }
+    elseif placeId == 4442272183 or placeId == 79091703265657 then
+        gates = {
+            {pos = Vector3.new(923, 126, 32852),     entrance = Vector3.new(923.21252441406, 126.9760055542, 32852.83203125)},
+            {pos = Vector3.new(-6509, 83, -133),     entrance = Vector3.new(-6508.5581054688, 89.034996032715, -132.83953857422)},
+        }
+    elseif placeId == 7449423635 or placeId == 100117331123089 then
+        gates = {
+            {pos = Vector3.new(-12462, 375, -7552),  entrance = Vector3.new(-12465, 459, -7561)},
+            {pos = Vector3.new(5657, 1013, -335),    entrance = Vector3.new(5655, 1013, -317)},
+            {pos = Vector3.new(-5036, 315, -3179),   entrance = Vector3.new(-5083, 371, -3177)},
+        }
+    end
 
-        -- Calculate step destination
-        local dir = (targetPos - curPos).Unit
-        local stepDist = math.min(remaining, STEP_SIZE)
-        local nextPos = curPos + dir * stepDist
-
-        -- Keep target rotation, change only position
-        local nextCF
-        if remaining <= STEP_SIZE then
-            nextCF = targetCF  -- last step keeps exact CFrame
-        else
-            nextCF = CFrame.new(nextPos)
+    -- Tim gate gan dich nhat va gan hon khoang cach thang
+    local bestGate = nil
+    local bestDist = math.huge
+    for _, g in ipairs(gates) do
+        local d = (g.pos - dest).Magnitude
+        if d < bestDist then
+            bestDist = d
+            bestGate = g
         end
+    end
 
-        -- Set CFrame (server sync qua physics)
+    if bestGate and bestDist < dist then
         pcall(function()
-            hrp.CFrame = nextCF
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", bestGate.entrance)
         end)
-        -- Wait for server to confirm new position
-        task.wait(STEP_WAIT)
+        task.wait(0.8)
     end
 end
 
--- Non-blocking Tween: SafeMove in separate coroutine
--- When target changes, cancel old coroutine
-local _tweenThread = nil
-
-function Tween(p176)
-    if not p176 then return end
-    -- Cancel old tween coroutine if exists
-    if _tweenThread then
-        pcall(function() task.cancel(_tweenThread) end)
-        _tweenThread = nil
+-- Ham di chuyen chinh
+local function _moveTo(cf, stopFn)
+    _checkEntrance(cf.Position)
+    while true do
+        if stopFn and stopFn() then break end
+        local hrp = _hrp()
+        if not hrp then break end
+        local dist = (cf.Position - hrp.Position).Magnitude
+        if dist <= 8 then
+            _setCF(hrp, cf)
+            break
+        end
+        local dir = (cf.Position - hrp.Position).Unit
+        local nextCF = dist <= _STEP and cf or CFrame.new(hrp.Position + dir * _STEP)
+        _setCF(hrp, nextCF)
+        task.wait(0.08)
     end
-    _tweenThread = task.spawn(function()
-        SafeMove(p176, function()
-            return _tweenThread == nil
-        end)
-        _tweenThread = nil
-    end)
 end
 
--- TweenBlock: blocking SafeMove, waits until arrived
-function TweenBlock(targetCF)
-    if not targetCF then return end
-    -- Cancel running tween
-    if _tweenThread then
-        pcall(function() task.cancel(_tweenThread) end)
-        _tweenThread = nil
-    end
+-- =============================================
+-- CAC HAM PUBLIC - dung trong toan bo script
+-- =============================================
+
+-- Tween2: di chuyen blocking, doi den noi roi moi tiep tuc
+function Tween2(cf)
+    if not cf then return end
+    _cancelTP()
     _G.Clip2 = true
-    pcall(function()
-        SafeMove(targetCF, function()
-            return _G.StopTween
-        end)
-    end)
+    pcall(function() _moveTo(cf, function() return not _G.AutoLevel end) end)
     _G.Clip2 = false
 end
+
+-- BKP: teleport thang den mob (dung khi da gan)
+function BKP(cf)
+    local hrp = _hrp()
+    if hrp then _setCF(hrp, cf) end
+end
+
+-- Tween: non-blocking
+function Tween(cf)
+    if not cf then return end
+    _cancelTP()
+    _tpThread = task.spawn(function()
+        _moveTo(cf, function() return _tpThread == nil end)
+        _tpThread = nil
+    end)
+end
+
+-- TweenBlock: blocking
+function TweenBlock(cf)
+    if not cf then return end
+    _cancelTP()
+    _G.Clip2 = true
+    pcall(function() _moveTo(cf, function() return _G.StopTween end) end)
+    _G.Clip2 = false
+end
+
+-- topos: alias cho Tween (hub.lua dung ten nay)
+function topos(cf) Tween(cf) end
+
+-- TP1, TP13, fastpos, slowpos, TPP, BTP: alias
+function TP1(cf) Tween(cf) end
+function fastpos(cf) BKP(cf) end
+function slowpos(cf) Tween(cf) end
+function TP13(cf)
+    local t = task.spawn(function() _moveTo(cf) end)
+    return { Stop = function() pcall(task.cancel, t) end }
+end
+function TPP(cf)
+    local t = task.spawn(function() _moveTo(cf) end)
+    return { Stop = function() pcall(task.cancel, t) end }
+end
+function BTP(cf) if cf then _moveTo(cf) end end
+function TelePPlayer(cf) BKP(cf) end
+function stopTeleport() _cancelTP() end
+
+-- StopTween: dung tele + clean up
+function StopTween(state)
+    if not state then
+        _G.StopTween = true
+        _cancelTP()
+        local hrp = _hrp()
+        if hrp then
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            for _, obj in pairs(hrp:GetChildren()) do
+                if obj:IsA("BodyVelocity") or obj:IsA("BodyGyro")
+                or obj:IsA("BodyPosition") then
+                    obj:Destroy()
+                end
+            end
+        end
+        _G.StopTween = false
+        _G.Clip2 = false
+    end
+end
+
+TweenSpeed = 600
+
 function EquipTool(p181)
     if game.Players.LocalPlayer.Backpack:FindFirstChild(p181) then
         local v182 = game.Players.LocalPlayer.Backpack:FindFirstChild(p181)
@@ -3028,57 +3107,28 @@ spawn(function()
                 local questVisible = false
                 local QuestTitle = ""
                 pcall(function()
-                    local QuestGui = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest
-                    questVisible = QuestGui.Visible
+                    questVisible = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible
                     if questVisible then
-                        QuestTitle = QuestGui.Container.QuestTitle.Title.Text
+                        QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
                     end
                 end)
 
-                -- FIX: dung lower + match chu dau de tranh loi hoa thuong
-                local titleLower = string.lower(QuestTitle)
-                local monShort = string.lower(string.match(NameMon, "(%a+)") or NameMon)
-                local monLower = string.lower(NameMon)
-
-                -- If different quest active, abandon it (check 2 lan de khong abandon nhầm lúc quest vừa xong)
-                if questVisible and QuestTitle ~= ""
-                    and not string.find(titleLower, monShort)
-                    and not string.find(titleLower, monLower) then
+                -- If different quest active, abandon it
+                if questVisible and QuestTitle ~= "" and not string.find(QuestTitle, NameMon) then
                     bringmob = false
-                    task.wait(0.5) -- cho chac chan khong phai quest vua xong
-                    -- Check lai lan 2
-                    pcall(function()
-                        local QuestGui = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest
-                        questVisible = QuestGui.Visible
-                        QuestTitle = questVisible and QuestGui.Container.QuestTitle.Title.Text or ""
-                    end)
-                    titleLower = string.lower(QuestTitle)
-                    if questVisible and QuestTitle ~= "" and not string.find(titleLower, monShort) then
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                    end
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
                     return
                 end
 
-                -- No quest -> teleport tung buoc den NPC (khong bay qua bien nua)
+                -- No quest -> fly to NPC to accept quest
                 if not questVisible then
                     bringmob = false
-                    local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
-                    local dist = (CFrameQ.Position - hrp.Position).Magnitude
-                    if dist > 25 then
-                        local steps = math.ceil(dist / 200)
-                        local startPos = hrp.Position
-                        for i = 1, steps do
-                            if not _G.AutoLevel then break end
-                            local t = i / steps
-                            local newPos = startPos:Lerp(CFrameQ.Position, t)
-                            hrp.CFrame = CFrame.new(newPos) + Vector3.new(0, 3, 0)
-                            task.wait(0.15)
-                        end
-                    end
-                    task.wait(0.3)
-                    if (CFrameQ.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 25 then
+                    Tween2(CFrameQ)
+                    repeat task.wait(0.1) until (CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 20 or not _G.AutoLevel
+                    wait(0.2)
+                    if (CFrameQ.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 20 then
                         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-                        task.wait(0.5)
+                        wait(0.3)
                     end
                     return
                 end
