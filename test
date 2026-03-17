@@ -1,4 +1,3 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Testgameak/RYNtraxHub/refs/heads/main/attack%20fasst"))()
 if game.PlaceId == 2753915549 then
     World1 = true
 elseif game.PlaceId == 4442272183 then
